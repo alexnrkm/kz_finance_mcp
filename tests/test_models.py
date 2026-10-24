@@ -41,3 +41,11 @@ def test_reconciliation_and_validation() -> None:
         replace(statement, currency="USD")
     with pytest.raises(ValueError, match="outside"):
         replace(statement, end=date(2026, 9, 30), start=date(2026, 9, 1))
+
+
+def test_money_rejects_values_that_cannot_be_stored_exactly() -> None:
+    with pytest.raises(ValueError, match="range"):
+        parse_kzt("92233720368547758.08")
+    assert parse_kzt("92233720368547758.07") == 9223372036854775807
+    with pytest.raises(ValueError, match="range"):
+        TransactionInput(date(2026, 10, 1), -(2**64), "Test", "Test", Kind.PURCHASE)

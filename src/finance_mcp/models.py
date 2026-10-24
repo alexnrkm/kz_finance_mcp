@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from datetime import date
 from enum import StrEnum
 
+from finance_mcp.money import validate_tiyn
+
 CURRENCY = "KZT"
 UNCATEGORIZED_ID = 1
 
@@ -34,6 +36,7 @@ class TransactionInput:
     counterparty_account: str | None = None
 
     def __post_init__(self) -> None:
+        validate_tiyn(self.amount_tiyn)
         if type(self.amount_tiyn) is not int or self.amount_tiyn == 0:
             raise ValueError("Transaction amount must be a nonzero integer in tiyn")
         if self.page < 1 or not self.description.strip() or not self.merchant.strip():
@@ -62,6 +65,19 @@ class StatementInput:
             raise ValueError("Only KZT statements are supported")
         if not self.account.strip() or self.start > self.end:
             raise ValueError("Statement requires an account and a valid date range")
+        for amount in (
+            self.opening_tiyn,
+            self.closing_tiyn,
+            self.debits_tiyn,
+            self.credits_tiyn,
+        ):
+            if amount is not None:
+                validate_tiyn(amount)
+        if any(
+            value is not None and value < 0
+            for value in (self.debits_tiyn, self.credits_tiyn)
+        ):
+            raise ValueError("Statement debit and credit totals must be nonnegative")
         if any(
             not self.start <= item.posted_on <= self.end for item in self.transactions
         ):
