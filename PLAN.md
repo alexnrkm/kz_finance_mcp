@@ -31,6 +31,12 @@ Project documentation, code comments, and commit messages are written in English
 
 ## Stages and commits
 
+Current progress: core models, storage, conservative deduplication, categories,
+history, relationship validation, analytics, and the stdio MCP interface are
+implemented and tested on synthetic data. Installation is documented.
+Verified bank fixtures and Kaspi/Freedom adapters are still pending actual samples.
+Windows/Python 3.14 is tested; macOS/Linux validation remains outstanding.
+
 1. Skeleton, environment, checks - `chore: initialize project and quality checks`.
 2. Anonymized bank samples - `test: add bank statement fixtures`.
 3. Data model and SQLite - `feat: add transaction storage`.
