@@ -82,8 +82,24 @@ def assign(
                 key,
                 {"category_id": category_id, "assignment": "manual", "rule_id": None},
             )
+            _resolve_manual_conflict(connection, journal, key)
         result["change_id"] = journal.finish("category:assign")
         return result
+
+
+def _resolve_manual_conflict(
+    connection: sqlite3.Connection,
+    journal: Journal,
+    transaction_id: int,
+) -> None:
+    reviews = rows(
+        connection,
+        """SELECT id FROM review_items WHERE
+        kind='rule_conflict' AND transaction_id=? AND resolved=0""",
+        (transaction_id,),
+    )
+    for review in reviews:
+        journal.update("review_items", review["id"], {"resolved": 1})
 
 
 def create_rule(

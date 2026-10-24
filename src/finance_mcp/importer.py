@@ -6,6 +6,7 @@ import sqlite3
 
 from finance_mcp.categories import apply_to_import
 from finance_mcp.identity import fingerprint, normalize_merchant
+from finance_mcp.links import reconcile_transfers
 from finance_mcp.models import StatementInput, TransactionInput
 from finance_mcp.storage import Record, Store, insert, row, rows
 
@@ -39,6 +40,7 @@ def import_parsed(
             _source(connection, statement_id, ordinal, transaction_id, transaction)
             if is_new:
                 apply_to_import(connection, transaction_id)
+        reconcile_transfers(connection)
         return {
             "status": "imported",
             "statement_id": statement_id,

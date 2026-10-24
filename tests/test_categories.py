@@ -42,6 +42,10 @@ def test_conflicting_rules_require_review(
     with store.connect() as connection:
         assert row(connection, "SELECT * FROM transactions")["category_id"] == 1
         assert row(connection, "SELECT * FROM review_items")["kind"] == "rule_conflict"
+    preview = assign(store, [1], first)
+    assign(store, [1], first, preview["preview_token"])
+    with store.connect() as connection:
+        assert row(connection, "SELECT * FROM review_items")["resolved"] == 1
 
 
 def test_stale_preview_cannot_overwrite_new_decision(
