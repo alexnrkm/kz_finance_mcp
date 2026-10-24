@@ -58,13 +58,14 @@ to reduce agent context usage.
 
 ## Learning workflow and Git
 
-Explanation -> supporting implementation -> small user exercise -> pause ->
-joint review -> checks -> commit -> pause before the next stage.
-Do not complete the user's exercise unless asked.
+Continue implementation without mandatory exercises or pauses between stages.
+Explain meaningful decisions briefly as work progresses. Exercises are optional
+and only assigned on request. Ask when required input or approval is missing.
 
 Usually make one or two commits per stage. Before committing, inspect the diff,
 the file list, and all four checks from the README. Do not commit unfinished
-logic on a timer. Work on a separate branch without automatic pushes.
+logic on a timer. Work on a separate branch. Push reviewed, passing milestones
+to the working branch as authorized by the user; never push directly to main.
 
 New dependencies, changes to the agreed public API or database schema,
 and file deletions require approval. Do not change AGENTS.md without confirmation.
