@@ -54,11 +54,33 @@ def test_real_stdio_session_and_restart(
                     "manage_categories", {"action": "create", "name": "Food"}
                 )
                 assert not created.isError
-                report = await session.call_tool("spending_report", {})
-                assert report.structuredContent["net_spending_tiyn"] == 125000
+                await _check_categorization(
+                    session, created.structuredContent["category_id"]
+                )
                 invalid = await session.call_tool("search_transactions", {"limit": 0})
                 assert invalid.isError
 
     asyncio.run(check())
     reopened = create_service(tmp_path)
     assert len(reopened.manage_categories("list")["categories"]) == 2
+
+
+async def _check_categorization(session: ClientSession, category_id: int) -> None:
+    arguments = {"transaction_ids": [1], "category_id": category_id}
+    preview = await session.call_tool("assign_category", arguments)
+    applied = await session.call_tool(
+        "assign_category",
+        {**arguments, "preview_token": preview.structuredContent["preview_token"]},
+    )
+    report = await session.call_tool(
+        "spending_report", {"filters": {"start": "2026-10-01", "end": "2026-10-31"}}
+    )
+    assert report.structuredContent["net_spending_tiyn"] == 125000
+    assert report.structuredContent["categories"][0]["name"] == "Food"
+    assert report.structuredContent["filters"]["start"] == "2026-10-01"
+    undone = await session.call_tool(
+        "undo_change", {"change_id": applied.structuredContent["change_id"]}
+    )
+    assert not undone.isError
+    restored = await session.call_tool("get_transaction", {"transaction_id": 1})
+    assert restored.structuredContent["transaction"]["category_id"] == 1
