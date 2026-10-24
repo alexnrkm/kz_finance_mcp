@@ -4,6 +4,10 @@ A local Python MCP server for personal bank statements in KZT.
 The server owns deterministic parsing, deduplication, rules, and report math.
 The connected agent resolves uncertain decisions and provides recommendations.
 
+For a detailed explanation of the project, start with the
+[engineering documentation](docs/README.md). It includes architecture, database
+tables, accounting algorithms, every MCP tool, operations, and a development guide.
+
 ## Current status
 
 This is a working core and stdio MCP interface, not a completed bank importer.
