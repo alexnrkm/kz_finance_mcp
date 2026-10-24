@@ -75,16 +75,24 @@ def assign(
             return result
         if token != expected:
             raise ValueError("Preview is stale or invalid; request a new preview")
-        journal = Journal(connection)
-        for key in ids:
-            journal.update(
-                "transactions",
-                key,
-                {"category_id": category_id, "assignment": "manual", "rule_id": None},
-            )
-            _resolve_manual_conflict(connection, journal, key)
-        result["change_id"] = journal.finish("category:assign")
+        result["change_id"] = _assign_manual(connection, ids, category_id)
         return result
+
+
+def _assign_manual(
+    connection: sqlite3.Connection,
+    ids: list[int],
+    category_id: int,
+) -> int | None:
+    journal = Journal(connection)
+    for key in ids:
+        journal.update(
+            "transactions",
+            key,
+            {"category_id": category_id, "assignment": "manual", "rule_id": None},
+        )
+        _resolve_manual_conflict(connection, journal, key)
+    return journal.finish("category:assign")
 
 
 def _resolve_manual_conflict(

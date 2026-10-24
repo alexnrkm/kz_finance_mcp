@@ -1,5 +1,6 @@
 """Deterministic spending reports; no financial advice or model calls."""
 
+import sqlite3
 from collections import defaultdict
 from dataclasses import asdict
 from datetime import date
@@ -28,12 +29,17 @@ def spending(store: Store, filters: Filters) -> Record:
             item["id"]: item["name"]
             for item in rows(connection, "SELECT * FROM categories")
         }
-        coverage = rows(
-            connection,
-            "SELECT st.*,a.bank FROM statements st "
-            "JOIN accounts a ON a.id=st.account_id ORDER BY st.account_id,st.start",
-        )
-    return _report(items, categories) | {
+        context = _context(connection, filters, excluded)
+    return _report(items, categories) | context
+
+
+def _context(connection: sqlite3.Connection, filters: Filters, excluded: int) -> Record:
+    coverage = rows(
+        connection,
+        "SELECT st.*,a.bank FROM statements st "
+        "JOIN accounts a ON a.id=st.account_id ORDER BY st.account_id,st.start",
+    )
+    return {
         "filters": asdict(filters),
         "currency": "KZT",
         "unit": "tiyn",
@@ -65,9 +71,23 @@ def _report(items: list[Record], categories: dict[int, str]) -> Record:
         if amount:
             grouped[item["effective_category_id"]] += amount
             merchants[item["merchant"]] += amount
-    return {
+    return _cash_flow(items) | {
         "transaction_count": len(items),
         "net_spending_tiyn": sum(grouped.values()),
+        "uncategorized_net_tiyn": grouped.get(1, 0),
+        "categories": [
+            {"category_id": key, "name": categories[key], "net_tiyn": value}
+            for key, value in sorted(grouped.items(), key=lambda pair: -pair[1])
+        ],
+        "merchants": [
+            {"merchant": key, "net_tiyn": value}
+            for key, value in sorted(merchants.items(), key=lambda pair: -pair[1])
+        ],
+    }
+
+
+def _cash_flow(items: list[Record]) -> Record:
+    return {
         "income_tiyn": sum(
             item["amount_tiyn"]
             for item in items
@@ -86,15 +106,6 @@ def _report(items: list[Record], categories: dict[int, str]) -> Record:
             for item in items
             if item["kind"] == "refund" and not item["linked_refund"]
         ),
-        "uncategorized_net_tiyn": grouped.get(1, 0),
-        "categories": [
-            {"category_id": key, "name": categories[key], "net_tiyn": value}
-            for key, value in sorted(grouped.items(), key=lambda pair: -pair[1])
-        ],
-        "merchants": [
-            {"merchant": key, "net_tiyn": value}
-            for key, value in sorted(merchants.items(), key=lambda pair: -pair[1])
-        ],
     }
 
 

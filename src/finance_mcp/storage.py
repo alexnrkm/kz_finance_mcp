@@ -7,7 +7,7 @@ from importlib.resources import files
 from pathlib import Path
 from typing import Any
 
-type Record = dict[str, Any]
+Record = dict[str, Any]
 SCHEMA_VERSION = 1
 
 

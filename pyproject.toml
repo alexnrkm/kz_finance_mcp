@@ -9,6 +9,9 @@ description = "Local MCP server for Kazakh bank statements"
 requires-python = ">=3.12"
 dependencies = ["mcp>=1.26,<2", "pdfplumber>=0.11,<0.12"]
 
+[project.scripts]
+finance-mcp-kz = "finance_mcp.server:main"
+
 [tool.setuptools.packages.find]
 where = ["src"]
 

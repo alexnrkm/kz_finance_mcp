@@ -1,5 +1,6 @@
 """Explainable review candidates, not claims of fraud or unwanted spending."""
 
+import sqlite3
 from collections import defaultdict
 from datetime import date
 
@@ -24,16 +25,7 @@ def signals(store: Store, filters: Filters) -> Record:
             LEDGER + f"SELECT * FROM ledger WHERE {where} AND {ELIGIBLE}",
             values,
         )
-        history_filter = Filters(
-            end=filters.start, account_id=filters.account_id, bank=filters.bank
-        )
-        history_where, history_values = history_filter.sql()
-        history = rows(
-            connection,
-            LEDGER + f"SELECT * FROM ledger WHERE {history_where} "
-            f"AND posted_on<? AND {ELIGIBLE}",
-            (*history_values, filters.start.isoformat()),
-        )
+        history = _history(connection, filters.start, filters)
     expenses = [item for item in items if expense(item) > 0]
     known = {item["merchant"] for item in history if expense(item) > 0}
     return {
@@ -49,6 +41,20 @@ def signals(store: Store, filters: Filters) -> Record:
             "amount_matching": "exact signed tiyn, same account and merchant",
         },
     }
+
+
+def _history(
+    connection: sqlite3.Connection, start: date, filters: Filters
+) -> list[Record]:
+    history_filter = Filters(
+        end=start, account_id=filters.account_id, bank=filters.bank
+    )
+    where, values = history_filter.sql()
+    return rows(
+        connection,
+        LEDGER + f"SELECT * FROM ledger WHERE {where} AND posted_on<? AND {ELIGIBLE}",
+        (*values, start.isoformat()),
+    )
 
 
 def _recurring(items: list[Record]) -> list[Record]:
